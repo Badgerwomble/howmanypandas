@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weight Comparison Tool</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      /* Using a stable Wikimedia Commons image for vintage scales */
+      background-image: url('pic.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-attachment: fixed;
+    }
+    .container {
+      max-width: 450px;
+      margin: 48px auto;
+      background: rgba(255,255,255,0.92); /* semi-transparent so background shows through */
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #bbb;
+    }
+    label { display: block; margin-top: 18px; }
+    select, input[type="text"], input[type="number"] {
+      width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;
+    }
+    button { margin-top: 22px; padding: 10px 20px; background: #008cba; color: white; border: none; border-radius: 4px; font-size: 1.1em; cursor: pointer; }
+    button:hover { background: #005f5f; }
+    .result { margin-top: 30px; font-size: 1.2em; background: #e1f5e1; padding: 14px; border-radius: 5px; }
+    .visual { margin-top: 10px; font-size: 2em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Weight Comparison Tool</h2>
+    <label for="objectName">Your object name:</label>
+    <input type="text" id="objectName" placeholder="e.g. Pencil case" />
+    <label for="objectWeight">Your object weight (kg):</label>
+    <input type="number" id="objectWeight" placeholder="e.g. 20" step="any" min="0.000001" />
+    <label for="groupSelect">Select a group:</label>
+    <select id="groupSelect"></select>
+    <label for="itemSelect">Select an item:</label>
+    <select id="itemSelect"></select>
+    <button onclick="compareWeight()">Compare</button>
+    <div class="result" id="result"></div>
+    <div class="visual" id="visual"></div>
+    <button id="copyBtn" style="margin-top:10px; display:none;">Copy result</button>
+  </div>
+  <script>
+    const data = {
+      "Animals": {
+        "Ants": 0.00001,
+        "Beavers": 32,
+        "Honey Bee": 0.000113,
+        "European Rabbit": 2.5,
+        "Cat": 4.5,
+        "Chimpanzee": 50,
+        "Cow": 544.8,
+        "Duck": 2.5,
+        "Fox": 6.5,
+        "Gecko": 0.133,
+        "Giant Panda": 113,
+        "Gorilla": 195,
+        "Komodo Dragon": 70,
+        "Lion": 250,
+        "Mice": 0.025,
+        "Polar Bear": 700,
+        "Queen Bee": 0.00025,
+        "Red Panda": 7.7,
+        "Tiger": 177,
+        "Zebra": 322
+      },
+      "Dinosaurs": {
+        "Tyrannosaurus": 7000,
+        "Stegosaurus": 6000,
+        "Triceratops": 13000,
+        "Velociraptor": 17,
+        "Ovaraptor": 40,
+        "Compsognathus": 5.5,
+        "Apatosaurus": 25000,
+        "Diplodocus": 15000,
+        "Patagotitin": 57000,
+        "Argentinosauraus": 70000,
+        "Spinosaurus": 7400,
+        "Gigantosaurus": 7200,
+        "Pterodactyl": 6.8
+      },
+      "Objects": {
+        "Bed": 70,
+        "Egyptian Mummy": 2.27,
+        "Laptop": 2.7,
+        "Pen": 0.0015,
+        "Phone": 0.1
+      },
+      "Sea_Creatures": {
+        "Common Stingray": 4.5,
+        "Giant Squid": 150,
+        "Great White Shark": 1800,
+        "Octopus": 15,
+        "Giant Oarfish": 270,
+        "Goblin shark": 210,
+        "Humpback Anglerfish": 0.3,
+        "Japanese Spider Crab": 20,
+        "Lion fish": 1.2,
+        "Manatee": 500,
+        "Narwhal": 1600,
+        "Pufferfish": 3.2
+      },
+      "Celestial_Bodies": {
+        "Earth": 5.972e24,
+        "Jupiter": 1.898e27,
+        "Mars": 6.417e23,
+        "Moon": 7.3e22,
+        "Mercury": 3.29e23,
+        "Neptune": 1.024e26,
+        "Pluto": 1.31e22,
+        "Saturn": 5.683e26,
+        "Sun": 1.989e30,
+        "Uranus": 8.681e25,
+        "Venus": 4.867e24
+      }
+    };
+    const emojiMap = {
+  // Animals
+  "Ants": "🐜",
+  "Beavers": "🦫",
+  "Honey Bee": "🐝",
+  "European Rabbit": "🐇",
+  "Cow": "🐄",
+  "Cat": "🐈",
+  "Chimpanzee": "🦧",
+  "Duck": "🦆",
+  "Fox": "🦊",
+  "Gecko": "🦎",
+  "Giant Panda": "🐼",
+  "Gorilla": "🦍",
+  "Komodo Dragon": "🦎",
+  "Lion": "🦁",
+  "Mice": "🐁",
+  "Polar Bear": "🐻‍❄️",
+  "Queen Bee": "🐝",
+  "Red Panda": "🦊",
+  "Tiger": "🐅",
+  "Zebra": "🦓",
+
+  // Dinosaurs
+  "Tyrannosaurus": "🦖",
+  "Stegosaurus": "🦕",
+  "Triceratops": "🦕",
+  "Velociraptor": "🦖",
+  "Ovaraptor": "🦕",
+  "Compsognathus": "🦕",
+  "Apatosaurus": "🦕",
+  "Diplodocus": "🦕",
+  "Patagotitin": "🦕",
+  "Argentinosauraus": "🦕",
+  "Spinosaurus": "🦖",
+  "Gigantosaurus": "🦖",
+  "Pterodactyl": "🦅",
+
+  // Objects
+  "Bed": "🛏️",
+  "Egyptian Mummy": "🧑‍🦽",
+  "Laptop": "💻",
+  "Pen": "🖊️",
+  "Phone": "📱",
+
+  // Sea Creatures
+  "Common Stingray": "🐟",
+  "Giant Squid": "🦑",
+  "Great White Shark": "🦈",
+  "Octopus": "🐙",
+  "Giant Oarfish": "🐠",
+  "Goblin shark": "🦈",
+  "Humpback Anglerfish": "🐡",
+  "Japanese Spider Crab": "🦀",
+  "Lion fish": "🐠",
+  "Manatee": "🦭",
+  "Narwhal": "🐋",
+  "Pufferfish": "🐡",
+
+  // Celestial Bodies
+  "Earth": "🌍",
+  "Jupiter": "🪐",
+  "Mars": "🔴",
+  "Moon": "🌑",
+  "Mercury": "☿🔴",
+  "Neptune": "🔵",
+  "Pluto": "❄️",
+  "Saturn": "🪐",
+  "Sun": "☀️",
+  "Uranus": "🪐",
+  "Venus": "♀🔵"
+    };
+    const groupSelect = document.getElementById('groupSelect');
+    const itemSelect = document.getElementById('itemSelect');
+
+    for (let group in data) {
+      let opt = document.createElement('option');
+      opt.value = group;
+      opt.textContent = group.replace(/_/g, ' ');
+      groupSelect.appendChild(opt);
+    }
+    function updateItemSelect() {
+      const group = groupSelect.value;
+      itemSelect.innerHTML = '';
+      for (let item in data[group]) {
+        let opt = document.createElement('option');
+        opt.value = item;
+        opt.textContent = item;
+        itemSelect.appendChild(opt);
+      }
+    }
+    groupSelect.addEventListener('change', updateItemSelect);
+    updateItemSelect();
+
+    const copyBtn = document.getElementById('copyBtn');
+    function copyResult() {
+      const text = document.getElementById('result').textContent;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => { copyBtn.textContent = "Copy result"; }, 1200);
+      }
+    }
+    copyBtn.addEventListener('click', copyResult);
+
+    function compareWeight() {
+      const objName = document.getElementById('objectName').value.trim() || "object";
+      const objWeight = parseFloat(document.getElementById('objectWeight').value);
+      const group = groupSelect.value;
+      const item = itemSelect.value;
+      const itemWeight = data[group][item];
+      const resultDiv = document.getElementById('result');
+      const visualDiv = document.getElementById('visual');
+      if (!objName || isNaN(objWeight) || objWeight <= 0) {
+        resultDiv.textContent = "Please enter a valid object name and a positive weight.";
+        visualDiv.textContent = "";
+        copyBtn.style.display = "none";
+        return;
+      }
+      if (!itemWeight || itemWeight <= 0) {
+        resultDiv.textContent = "The selected item does not have a valid weight.";
+        visualDiv.textContent = "";
+        copyBtn.style.display = "none";
+        return;
+      }
+      const ratio = objWeight / itemWeight;
+      let ratioStr = "";
+      if (ratio < 0.01 || ratio > 1000000) {
+        ratioStr = ratio.toExponential(2);
+      } else {
+        ratioStr = ratio.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+      let plural = (Math.abs(ratio - 1) < 0.000001) ? item : item + "s";
+      resultDiv.textContent = `Your ${objName} is the same weight as ${ratioStr} ${plural}.`;
+      copyBtn.style.display = "inline-block";
+      let emoji = emojiMap[item] || "❓";
+      let intCount = Math.floor(ratio);
+      let visualsToShow = Math.max(1, Math.min(intCount, 10));
+      let visualString = "";
+      for (let i = 0; i < visualsToShow; i++) {
+        visualString += emoji + " ";
+      }
+      if (intCount > 10) {
+        visualString += "+ more";
+      }
+      visualDiv.textContent = visualString.trim();
+    }
+  </script>
+</body>
+</html>
