@@ -197,7 +197,7 @@
   "Saturn": "🪐",
   "Sun": "☀️",
   "Uranus": "🪐",
-  "Venus": "♀🔵"
+  "Venus": "🔵"
     };
     const groupSelect = document.getElementById('groupSelect');
     const itemSelect = document.getElementById('itemSelect');
